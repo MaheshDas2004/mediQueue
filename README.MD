@@ -34,33 +34,45 @@ A modern **Hospital Queue Management System** built using **FastAPI** to streaml
 ```
 hospital-queue-system/
 │
-├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── config.py
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   ├── database/
-│   │   ├── utils/
-│   │   └── dependencies/
+├── backend/                          ← 🚀 FastAPI backend
 │   │
-│   ├── requirements.txt
+│   ├── app/
+│   │   ├── main.py                   ← Entry point
+│   │   ├── config.py                 ← ENV settings (.env)
+│   │
+│   │   ├── models/                   ← DB tables (SQLAlchemy)
+│   │   │   ├── patient.py
+│   │   │   ├── queue.py
+│   │   │   └── doctor.py (optional future)
+│   │
+│   │   ├── schemas/                  ← Request/Response (Pydantic)
+│   │   │   ├── patient_schema.py
+│   │   │   └── queue_schema.py
+│   │
+│   │   ├── routes/                   ← API endpoints
+│   │   │   ├── patient_routes.py
+│   │   │   └── queue_routes.py
+│   │
+│   │   ├── services/                 ← 🔥 CORE LOGIC
+│   │   │   ├── patient_service.py
+│   │   │   └── queue_service.py
+│   │
+│   │   ├── database/
+│   │   │   ├── connection.py         ← engine + session
+│   │   │   └── base.py               ← Base import (optional)
+│   │
+│   │   ├── utils/                    ← helper logic
+│   │   │   └── triage.py             ← 🔥 emergency detection logic
+│   │
+│   │   └── dependencies/
+│   │       └── db.py                 ← get_db dependency
+│   │
 │   ├── .env
+│   ├── requirements.txt
 │   └── venv/
 │
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.js
-│
-├── docs/
-│   └── api_docs.md
-│
-├── README.md
-└── .gitignore
+├── frontend/ (future)
+└── README.md
 ```
 
 ---
