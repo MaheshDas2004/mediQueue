@@ -5,6 +5,7 @@ class DepartmentModel(Base):
     __tablename__ = "departments"
     
     department_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    doctors = relationship("DoctorModel", back_populates="department")
     name = Column(String, nullable=False)
     code = Column(String, nullable=False, unique=True)
+    doctors = relationship("DoctorModel", back_populates="department")
+    queues = relationship("QueueModel", back_populates="department")
