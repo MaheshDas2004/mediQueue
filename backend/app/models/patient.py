@@ -19,7 +19,7 @@ class PatientModel(Base):
 
     disability = Column(Boolean, default=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime)
 
     # 🔗 Relationship
     queues = relationship("QueueModel", back_populates="patient")
