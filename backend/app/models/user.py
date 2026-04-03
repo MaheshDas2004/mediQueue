@@ -1,8 +1,11 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Column, Integer, String, Enum as SQLEnum,DateTime
+from sqlalchemy import Column, Integer, String, Enum as SQLEnum, DateTime
+
 from app.database.connection import Base
+
+
 class User_Role(str,Enum):
     ADMIN = "admin"
     DOCTOR = "doctor"
