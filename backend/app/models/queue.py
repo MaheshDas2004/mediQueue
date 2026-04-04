@@ -8,9 +8,8 @@ class QueueModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
-    doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("patients.patient_id"), nullable=False)
+    department_id = Column(Integer, ForeignKey("departments.department_id"), nullable=False)
 
     token_number = Column(Integer, nullable=False)
     status = Column(String, default="waiting")
@@ -19,5 +18,4 @@ class QueueModel(Base):
 
     # Relationships
     patient = relationship("PatientModel", back_populates="queues")
-    doctor = relationship("DoctorModel", back_populates="queues")
     department = relationship("DepartmentModel", back_populates="queues")
