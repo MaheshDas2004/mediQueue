@@ -3,128 +3,178 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const MediQueueIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+  <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect width="32" height="32" rx="7" fill="#111827" />
     <rect x="6" y="10" width="8" height="12" rx="1" fill="white" />
     <rect x="16" y="6" width="10" height="16" rx="1" fill="white" />
+    <rect x="8" y="13" width="4" height="2" rx="0.5" fill="#111827" />
+    <rect x="18" y="9" width="6" height="2" rx="0.5" fill="#111827" />
+    <rect x="18" y="13" width="6" height="2" rx="0.5" fill="#111827" />
+    <rect x="18" y="17" width="6" height="2" rx="0.5" fill="#111827" />
   </svg>
 );
+
+const EmailIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const EyeIcon = ({ open }) =>
+  open ? (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [apiError, setApiError] = useState("");
 
-  // ✅ validation
   const validate = () => {
     const errs = {};
-    if (!email.trim()) errs.email = "Email is required";
-    if (!password) errs.password = "Password is required";
+    if (!email.trim()) errs.email = "Email is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Enter a valid email address.";
+    if (!password) errs.password = "Password is required.";
     return errs;
   };
 
-  // ✅ submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const errs = validate();
     setErrors(errs);
-
+    setApiError("");
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
-    setSubmitError("");
-
     try {
       await login({ email, password });
-
-      // 🔥 redirect
       navigate("/dashboard");
-
-    } catch (err) {
-      setSubmitError(
-        err?.response?.data?.detail || "Login failed"
-      );
+    } catch (error) {
+      setApiError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-      <div className="w-full max-w-md bg-white p-6 rounded-xl shadow">
+    <div className="min-h-screen bg-slate-100" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
 
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-3">
+      <nav className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
+        <div className="flex items-center gap-2">
+          <MediQueueIcon />
+          <span className="text-base font-semibold text-slate-900">MediQueue</span>
+        </div>
+        <div className="hidden items-center gap-7 text-sm text-slate-600 md:flex">
+          <a href="#" className="hover:text-slate-900">About</a>
+          <a href="#" className="hover:text-slate-900">Features</a>
+          <a href="#" className="hover:text-slate-900">Support</a>
+        </div>
+        <button type="button" className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
+          Register
+        </button>
+      </nav>
+
+      <main className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-10 sm:px-6">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 shadow-lg shadow-slate-500/30">
             <MediQueueIcon />
           </div>
-          <h1 className="text-xl font-bold">MediQueue Admin</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">MediQueue Admin</h1>
+          <p className="mt-1.5 text-sm text-slate-500">Sign in to access the admin dashboard</p>
         </div>
 
-        {/* 🔴 error */}
-        {submitError && (
-          <p className="text-red-500 text-sm mb-3">{submitError}</p>
-        )}
-
-        <form onSubmit={handleSubmit}>
-
-          {/* Email */}
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setErrors((p) => ({ ...p, email: "" }));
-            }}
-            className="w-full mb-2 border p-2 rounded"
-          />
-          {errors.email && (
-            <p className="text-xs text-red-500">{errors.email}</p>
+        <section className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_24px_55px_-30px_rgba(15,23,42,0.45)] sm:p-7">
+          {apiError && (
+            <div className="mb-4 rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-700">
+              {apiError}
+            </div>
           )}
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="mb-4">
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Admin Email</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <EmailIcon />
+                </span>
+                <input
+                  type="email"
+                  placeholder="admin@mediqueue.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((p) => ({ ...p, email: "" }));
+                  }}
+                  className={`w-full rounded-lg border bg-slate-50 py-2.5 pl-9 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400
+                    ${errors.email ? "border-rose-400 focus:ring-2 focus:ring-rose-100" : "border-slate-300 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"}`}
+                />
+              </div>
+              {errors.email && <p className="mt-1 text-xs text-rose-500">{errors.email}</p>}
+            </div>
 
-          {/* Password */}
-          <div className="relative">
-            <input
-              type={showPw ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setErrors((p) => ({ ...p, password: "" }));
-              }}
-              className="w-full mb-2 border p-2 rounded pr-10"
-            />
-
+            <div className="mb-4">
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Password</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <LockIcon />
+                </span>
+                <input
+                  type={showPw ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((p) => ({ ...p, password: "" }));
+                  }}
+                  className={`w-full rounded-lg border bg-slate-50 py-2.5 pl-9 pr-10 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400
+                    ${errors.password ? "border-rose-400 focus:ring-2 focus:ring-rose-100" : "border-slate-300 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <EyeIcon open={showPw} />
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-rose-500">{errors.password}</p>}
+            </div>
             <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-2 top-2 text-sm"
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {showPw ? "Hide" : "Show"}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
-          </div>
+          </form>
 
-          {errors.password && (
-            <p className="text-xs text-red-500">{errors.password}</p>
-          )}
+          <div className="my-4 h-px bg-slate-200" />
+          <p className="text-center text-xs text-slate-500">Need help? <span className="font-semibold text-slate-700">Contact IT Support</span></p>
+        </section>
 
-          {/* Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-black text-white py-2 rounded mt-3"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-      </div>
+        <p className="mt-6 text-xs text-slate-500">Authorized personnel only</p>
+      </main>
     </div>
   );
 }
