@@ -2,18 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const MediQueueIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="32" height="32" rx="7" fill="#111827" />
-    <rect x="6" y="10" width="8" height="12" rx="1" fill="white" />
-    <rect x="16" y="6" width="10" height="16" rx="1" fill="white" />
-    <rect x="8" y="13" width="4" height="2" rx="0.5" fill="#111827" />
-    <rect x="18" y="9" width="6" height="2" rx="0.5" fill="#111827" />
-    <rect x="18" y="13" width="6" height="2" rx="0.5" fill="#111827" />
-    <rect x="18" y="17" width="6" height="2" rx="0.5" fill="#111827" />
-  </svg>
-);
-
 const EmailIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -69,8 +57,16 @@ export default function Login() {
 
     setLoading(true);
     try {
-      await login({ email, password });
-      navigate("/dashboard");
+     const res= await login({ email, password });
+     const role = res.user.role;
+      if (role === "ADMIN") navigate("/admin/dashboard");
+      else if (role === "DOCTOR") navigate("/doctor/dashboard");
+      else if (role === "TRIAGE") navigate("/triage/dashboard");
+      else {
+        setApiError("Unauthorized role. Contact support.");
+        await logout();
+      }
+
     } catch (error) {
       setApiError("Invalid email or password. Please try again.");
     } finally {
@@ -79,29 +75,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-
-      <nav className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
-        <div className="flex items-center gap-2">
-          <MediQueueIcon />
-          <span className="text-base font-semibold text-slate-900">MediQueue</span>
-        </div>
-        <div className="hidden items-center gap-7 text-sm text-slate-600 md:flex">
-          <a href="#" className="hover:text-slate-900">About</a>
-          <a href="#" className="hover:text-slate-900">Features</a>
-          <a href="#" className="hover:text-slate-900">Support</a>
-        </div>
-        <button type="button" className="rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
-          Register
-        </button>
-      </nav>
+    <div className="min-h-screen">
 
       <main className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-10 sm:px-6">
         <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 shadow-lg shadow-slate-500/30">
-            <MediQueueIcon />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">MediQueue Admin</h1>
+
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">MediQ Admin</h1>
           <p className="mt-1.5 text-sm text-slate-500">Sign in to access the admin dashboard</p>
         </div>
 
