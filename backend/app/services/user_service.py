@@ -93,21 +93,3 @@ def login_user(user_data: LoginSchema, db: Session, response: Response):
 def logout_user(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Logged out successfully"}
-
-# def is_authenticated(request:Request,db: Session):
-#     try:
-#         token = request.headers.get("Authorization")
-#         if not token:
-#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="you are not authorized")
-        
-#         token = token.split(" ")[1]
-#         data=jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-#         user_id=data.get("_id")
-        
-#         user = db.query(UserModel).filter(UserModel.user_id == user_id).first()
-#         if not user:
-#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-        
-#         return user
-#     except InvalidTokenError:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="you are not authorized")
