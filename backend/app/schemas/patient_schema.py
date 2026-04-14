@@ -12,7 +12,7 @@ class PatientSchema(BaseModel):
     address: Optional[str] = None
     physical_disability: bool = False
     symptoms: Optional[str] = None
-    body_temperature: Optional[float] = Field(default=None, ge=30, le=45)
+    body_temperature: Optional[float] = Field(default=None, ge=30, le=110) # in Fahrenheit
     blood_pressure: Optional[str] = Field(default=None, max_length=20)
     heart_rate: Optional[int] = Field(default=None, gt=0, lt=300)
     oxygen_lvl: Optional[int] = Field(default=None, ge=0, le=100)

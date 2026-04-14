@@ -10,7 +10,6 @@ class PatientModel(Base):
 
     patient_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
-    # 🟢 Basic Info
     name = Column(String, nullable=False)
     age = Column(Integer, nullable=False)
     gender = Column(String, nullable=False)
@@ -20,23 +19,19 @@ class PatientModel(Base):
     
     department_id = Column(Integer, ForeignKey("departments.department_id"), nullable=False)
 
-    # 🔵 Symptoms
     symptoms = Column(String, nullable=True)
 
-    # 🔴 Vitals
     body_temperature = Column(Float, nullable=True) #in fahrenheit
     blood_pressure = Column(String, nullable=True)  # "120/80"
     heart_rate = Column(Integer, nullable=True)
     oxygen_lvl = Column(Integer, nullable=True)
 
-    # 🧠 System Fields
     priority_score = Column(Integer, default=0)
     token_number = Column(Integer, nullable=True)
     status = Column(String, default="WAITING")
 
     assigned_doctor_id = Column(Integer, nullable=True)
 
-    # ⏱️ Timestamp
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     department = relationship("DepartmentModel")

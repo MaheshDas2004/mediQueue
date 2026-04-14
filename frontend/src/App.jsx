@@ -12,6 +12,7 @@ import Login from './pages/users/Login'
 import AdminDashboard from './pages/admin/Dashboard'
 import CreateUser from './pages/admin/CreateUser'
 import TriageDashboard from './pages/triage/Dashboard'
+import RegisterPatient from './pages/triage/RegisterPatient'
 import DoctorDashboard from './pages/doctor/Dashboard'
 
 // Protected Route Component
@@ -83,6 +84,18 @@ const App = () => {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/triage/register-patient" 
+          element={
+            <ProtectedRoute allowedRole="TRIAGE">
+              <RegisterPatient />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/triage/register" 
+          element={<Navigate to="/triage/register-patient" replace />}
+        />
       </Route>
 
       {/* Doctor Routes */}
@@ -94,6 +107,14 @@ const App = () => {
               <DoctorDashboard />
             </ProtectedRoute>
           } 
+        />
+        <Route
+          path="/doctor/queue"
+          element={
+            <ProtectedRoute allowedRole="DOCTOR">
+              <DoctorDashboard />
+            </ProtectedRoute>
+          }
         />
       </Route>
 

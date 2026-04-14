@@ -46,3 +46,19 @@ def require_triage(user: UserModel = Depends(is_authenticated)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Triage access required")
 
     return user
+
+def require_doctor(user: UserModel = Depends(is_authenticated)):
+    if user.role != UserRole.DOCTOR:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Doctor access required")
+
+    return user
+
+
+def require_doctor_or_triage(user: UserModel = Depends(is_authenticated)):
+    if user.role not in {UserRole.DOCTOR, UserRole.TRIAGE}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Doctor or triage access required",
+        )
+
+    return user

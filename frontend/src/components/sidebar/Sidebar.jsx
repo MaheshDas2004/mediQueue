@@ -37,8 +37,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         title: "MAIN",
         items: [
           { name: "Dashboard", path: "/triage/dashboard" },
-          { name: "Register Patient", path: "/triage/register" },
-          { name: "Queue", path: "/triage/queue" },
+          { name: "Live Queue", path: "/triage/queue" },
+          { name: "Check-in", path: "/triage/register-patient" },
         ],
       },
     ],

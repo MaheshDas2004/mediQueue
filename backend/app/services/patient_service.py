@@ -2,82 +2,35 @@ from app.models.patient import PatientModel
 from app.schemas.patient_schema import PatientSchema
 from sqlalchemy.orm import Session
 
-#Score body temperature in Fahrenheit. Inspired by NEWS2/MEWS ranges.
-def body_temp_score(temp: float) -> int:
-    if 97.0 <= temp <= 100.4:
-        return 0
-    if 95.2 <= temp < 97.0 or 100.4 < temp <= 102.2:
-        return 1
-    if temp < 95.2 or 102.2 < temp <= 104.0:
-        return 2
-    return 3  # Extreme deviations
+from app.models.user import UserModel, UserRole
+from app.utils.patient_utils import calculate_priority, queue_priority_boost
 
-# Score SpO2 level (%). Standard ranges from early warning scores."""
-def spo2_score(spo2: int) -> int:
-    if spo2 >= 95:
-        return 0
-    if 92 <= spo2 <= 94:
-        return 1
-    if 88 <= spo2 <= 91:
-        return 2
-    return 3
 
-# Score systolic blood pressure (mmHg). Adapted from MEWS/NEWS2.
-def bp_score(sbp: int) -> int:
-    if 110 <= sbp <= 219:
-        return 0
-    if 100 <= sbp <= 109 or 220 <= sbp <= 229:
-        return 1
-    if 90 <= sbp <= 99 or 230 <= sbp <= 249:
-        return 2
-    return 3
+def assign_doctors(department_id: int, db: Session):
+    doctors = db.query(UserModel).filter(
+        UserModel.department_id == department_id,
+        UserModel.role == UserRole.DOCTOR,
+    ).all()
 
-# Score heart rate (bpm). Based on standard vital sign scoring.
-def hr_score(hr: int) -> int:
-    if 51 <= hr <= 110:
-        return 0
-    if 41 <= hr <= 50 or 111 <= hr <= 130:
-        return 1
-    if 31 <= hr <= 40 or 131 <= hr <= 150:
-        return 2
-    return 3
-
-#Extract systolic BP from string like '120/80'.
-def parse_systolic_bp(bp_value: str | None) -> int | None:
-    if not bp_value:
+    if not doctors:
         return None
-    bp_text = str(bp_value).strip()
-    if '/' in bp_text:
-        systolic_text = bp_text.split("/")[0].strip()
-        if systolic_text.isdigit():
-            return int(systolic_text)
-    return None
+    
+    doctor_load = []
 
-#Compute total priority score from vitals + adjustments.
-def calculate_priority(patient: PatientModel) -> int:
-    score = 0
+    for doctor in doctors:
+        count = db.query(PatientModel).filter(
+            PatientModel.assigned_doctor_id == doctor.user_id,
+            PatientModel.status == "WAITING",
+        ).count()
+        doctor_load.append((doctor, count))
 
-    if patient.body_temperature is not None:
-        score += body_temp_score(patient.body_temperature)
+    doctor_load.sort(key=lambda item: item[1])
+    return doctor_load[0][0].user_id
 
-    if patient.oxygen_lvl is not None:
-        score += spo2_score(patient.oxygen_lvl)
 
-    if patient.heart_rate is not None:
-        score += hr_score(patient.heart_rate)
-
-    systolic_bp = parse_systolic_bp(patient.blood_pressure)
-    if systolic_bp is not None:
-        score += bp_score(systolic_bp)
-
-    # Adjustments: +2 for physical disability (elevated risk), +3 for vulnerable ages [web:33][web:35]
-    if patient.physical_disability:
-        score += 2
-
-    if patient.age >= 65 or patient.age <= 7:
-        score += 3
-
-    return score
+def generate_token_number(db: Session):
+    last_patient=db.query(PatientModel).order_by(PatientModel.token_number.desc()).first()
+    return (last_patient.token_number + 1) if last_patient and last_patient.token_number else 1
 
 
 def register_patient(patient_data: PatientSchema, db: Session):
@@ -95,16 +48,49 @@ def register_patient(patient_data: PatientSchema, db: Session):
         heart_rate=patient_data.heart_rate,
         oxygen_lvl=patient_data.oxygen_lvl,
     )
-
-    new_patient.priority_score = calculate_priority(new_patient)
-    new_patient.token_number = db.query(PatientModel).count() + 1
+    new_patient.priority_score = calculate_priority(
+        age=new_patient.age,
+        physical_disability=new_patient.physical_disability,
+        body_temperature=new_patient.body_temperature,
+        oxygen_lvl=new_patient.oxygen_lvl,
+        heart_rate=new_patient.heart_rate,
+        blood_pressure=new_patient.blood_pressure,
+    )
+    new_patient.assigned_doctor_id = assign_doctors(new_patient.department_id, db)
+    new_patient.token_number = generate_token_number(db)
 
     db.add(new_patient)
     db.commit()
     db.refresh(new_patient)
     return new_patient
 
+def get_queue(db:Session):
+    patient=db.query(PatientModel).filter(
+        PatientModel.status=="WAITING"
+    ).all()
 
-def show_patients(db: Session):
-    patients = db.query(PatientModel).all()
-    return patients
+    patient.sort(
+        key=lambda p: (p.priority_score or 0) + queue_priority_boost(p.created_at),
+        reverse=True
+    )
+    return patient
+
+def get_queue_with_wait_time(db:Session):
+    queue = get_queue(db)
+
+    AVG_TIME = 10  # minutes per patient
+
+    result = []
+
+    for index, patient in enumerate(queue):
+        estimated_wait = index * AVG_TIME
+
+        result.append({
+            "patient_id": patient.patient_id,
+            "name": patient.name,
+            "token": patient.token_number,
+            "priority": patient.priority_score,
+            "estimated_wait_time": estimated_wait
+        })
+
+    return result
