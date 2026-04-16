@@ -6,6 +6,7 @@ import RoleRoute from './routes/RoleRoute.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import CreateUserPage from './pages/admin/CreateUserPage.jsx'
 import ManageUsersPage from './pages/admin/ManageUsersPage.jsx'
+import AdminAllPatientsPage from './pages/admin/AdminAllPatientsPage.jsx'
 import TriageDashboardPage from './pages/triage/TriageDashboardPage.jsx'
 import RegisterPatientPage from './pages/triage/RegisterPatientPage.jsx'
 import QueueViewPage from './pages/triage/QueueViewPage.jsx'
@@ -38,6 +39,7 @@ function App() {
               <Route index element={<AdminDashboardPage />} />
               <Route path="create-user" element={<CreateUserPage />} />
               <Route path="manage-users" element={<ManageUsersPage />} />
+              <Route path="all-patients" element={<AdminAllPatientsPage />} />
             </Route>
           </Route>
 

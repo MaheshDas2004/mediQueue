@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Card from '../../components/Card'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
 import Modal from '../../components/Modal'
 import { useAuth } from '../../context/AuthContext'
-import { callNextPatient, getDoctorQueue, markPatientDone } from '../../services/doctorService'
+import { getDoctorQueue, markPatientDone } from '../../services/doctorService'
 import { getErrorMessage, isHighPriority } from '../../utils/helpers'
 import { useToast } from '../../context/ToastContext'
 
@@ -13,11 +13,10 @@ function CurrentPatientPage() {
   const { addToast } = useToast()
   const [queue, setQueue] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isCalling, setIsCalling] = useState(false)
   const [isMarking, setIsMarking] = useState(false)
   const [openConfirm, setOpenConfirm] = useState(false)
 
-  const fetchQueue = async () => {
+  const fetchQueue = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await getDoctorQueue(user.user_id)
@@ -27,33 +26,35 @@ function CurrentPatientPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [addToast, user.user_id])
 
   useEffect(() => {
     fetchQueue()
-  }, [user.user_id])
+  }, [fetchQueue])
 
-  const currentPatient = useMemo(() => {
-    const active = queue.find((item) => item.status === 'IN_TREATMENT')
-    if (active) return active
-    return queue.find((item) => item.status === 'WAITING') || null
-  }, [queue])
+  const currentPatient = useMemo(() => queue.find((item) => item.status === 'IN_TREATMENT') || null, [queue])
 
   const hasActiveTreatment = currentPatient?.status === 'IN_TREATMENT'
 
-  const handleCallNext = async () => {
-    if (!currentPatient || hasActiveTreatment) return
-    setIsCalling(true)
-    try {
-      await callNextPatient(currentPatient.patient_id)
-      addToast({ title: 'Patient called', description: `${currentPatient.name} moved to treatment.` })
-      await fetchQueue()
-    } catch (error) {
-      addToast({ title: 'Call failed', description: getErrorMessage(error), variant: 'error' })
-    } finally {
-      setIsCalling(false)
-    }
-  }
+  const patientInfo = useMemo(() => {
+    if (!currentPatient) return []
+    return [
+      { label: 'Name', value: currentPatient.name },
+      { label: 'Age', value: currentPatient.age },
+      { label: 'Gender', value: currentPatient.gender },
+      { label: 'Physical Disability', value: currentPatient.physical_disability === true ? 'Yes' : currentPatient.physical_disability === false ? 'No' : null },
+    ].map((item) => ({ ...item, value: item.value ?? 'N/A' }))
+  }, [currentPatient])
+
+  const vitalsInfo = useMemo(() => {
+    if (!currentPatient) return []
+    return [
+      { label: 'Body Temperature', value: currentPatient.body_temperature },
+      { label: 'Blood Pressure', value: currentPatient.blood_pressure },
+      { label: 'Heart Rate', value: currentPatient.heart_rate ? `${currentPatient.heart_rate} bpm` : null },
+      { label: 'Oxygen Level', value: currentPatient.oxygen_lvl ? `${currentPatient.oxygen_lvl}%` : null },
+    ].map((item) => ({ ...item, value: item.value ?? 'N/A' }))
+  }, [currentPatient])
 
   const handleMarkDone = async () => {
     if (!currentPatient || !hasActiveTreatment) return
@@ -72,36 +73,71 @@ function CurrentPatientPage() {
 
   return (
     <>
-      <Card title="Current Patient" description="Manage treatment workflow in real time">
+      <Card title="Consultation Sheet">
         {isLoading ? (
           <p className="text-sm text-slate-500">Loading current patient...</p>
         ) : !currentPatient ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-            No patient in queue right now.
+          <div className="border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+            No patient in treatment right now. Call in a patient from Doctor Dashboard.
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h3 className="text-xl font-semibold text-slate-800">{currentPatient.name}</h3>
-                <Badge variant={hasActiveTreatment ? 'info' : 'warning'}>{currentPatient.status}</Badge>
-                <Badge variant={isHighPriority(currentPatient.priority_score) ? 'danger' : 'neutral'}>
-                  Priority {currentPatient.priority_score}
-                </Badge>
+          <div className="space-y-5">
+            <div className="border border-slate-300 bg-white">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">MediQueue</p>
+                  <h3 className="mt-1 text-xl font-bold text-slate-900">Patient Consultation Record</h3>
+                </div>
+                <div className="text-right text-xs text-slate-500">
+                  <p>Token: #{currentPatient.token_number || 'N/A'}</p>
+                  <p>{new Date().toLocaleString()}</p>
+                </div>
               </div>
-              <p className="text-sm text-slate-600">Token #{currentPatient.token_number}</p>
-              <p className="mt-1 text-sm text-slate-600">Symptoms: {currentPatient.symptoms || 'N/A'}</p>
+
+              <div className="grid gap-0 md:grid-cols-2">
+                <div className="border-b border-slate-200 p-5 md:border-b-0 md:border-r">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Patient</span>
+                    <Badge variant={hasActiveTreatment ? 'info' : 'warning'}>{currentPatient.status}</Badge>
+                    <Badge variant={isHighPriority(currentPatient.priority_score) ? 'danger' : 'neutral'}>
+                      Priority {currentPatient.priority_score ?? 'N/A'}
+                    </Badge>
+                  </div>
+                  <ol className="space-y-1.5 text-sm">
+                    {patientInfo.map((detail, index) => (
+                      <li key={detail.label} className="grid grid-cols-[26px_160px_1fr] border-b border-slate-100 py-1.5 last:border-0">
+                        <span className="font-semibold text-slate-400">{index + 1}.</span>
+                        <span className="font-semibold text-slate-700">{detail.label}</span>
+                        <span className="text-slate-900">{detail.value}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className="p-5">
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Symptoms / Notes</span>
+                  <p className="mt-2 min-h-[120px] border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-800">
+                    {currentPatient.symptoms || 'No symptoms documented.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 px-5 py-4">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Vitals</span>
+                <ol className="mt-2 space-y-1.5 text-sm">
+                  {vitalsInfo.map((detail, index) => (
+                    <li key={detail.label} className="grid grid-cols-[26px_160px_1fr] border-b border-slate-100 py-1.5 last:border-0">
+                      <span className="font-semibold text-slate-400">{index + 1}.</span>
+                      <span className="font-semibold text-slate-700">{detail.label}</span>
+                      <span className="text-slate-900">{detail.value}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleCallNext} isLoading={isCalling} disabled={!currentPatient || hasActiveTreatment}>
-                Call Next Patient
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => setOpenConfirm(true)}
-                disabled={!currentPatient || !hasActiveTreatment}
-              >
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="danger" onClick={() => setOpenConfirm(true)} disabled={!currentPatient || !hasActiveTreatment}>
                 Mark as Done
               </Button>
             </div>

@@ -1,6 +1,9 @@
+import asyncio
+from contextlib import asynccontextmanager, suppress
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database.connection import Base, engine
+from app.database.connection import Base, SessionLocal, engine
 
 from app.models.patient import PatientModel
 from app.models.department import DepartmentModel
@@ -10,10 +13,35 @@ from app.routes.patient_routes import patient_router
 from app.routes.user_routes import user_routes
 from app.routes.department_routes import department_routes
 from app.routes.doctor_routes import doctor_router
+from app.services.patient_service import refresh_waiting_priorities
 
 Base.metadata.create_all(bind=engine)
 
-app=FastAPI(title="This is my hospital queue management application")
+AGING_REFRESH_INTERVAL_SECONDS = 60
+
+
+async def _run_priority_aging():
+    while True:
+        db = SessionLocal()
+        try:
+            refresh_waiting_priorities(db)
+        finally:
+            db.close()
+        await asyncio.sleep(AGING_REFRESH_INTERVAL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    aging_task = asyncio.create_task(_run_priority_aging())
+    try:
+        yield
+    finally:
+        aging_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await aging_task
+
+
+app=FastAPI(title="This is my hospital queue management application", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

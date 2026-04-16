@@ -14,8 +14,8 @@ def get_doctor_queue_endpoint(doctor_id: int, db= Depends(get_db)):
 
 @doctor_router.patch("/treatment/start/{patient_id}")
 def start_treatment_endpoint(patient_id: int, doctor_user= Depends(require_doctor), db=Depends(get_db)):
-    return start_treatment(patient_id, db)
+    return start_treatment(patient_id, doctor_user.user_id, db)
 
 @doctor_router.patch("/treatment/complete/{patient_id}")
 def complete_treatment_endpoint(patient_id: int, doctor_user= Depends(require_doctor), db=Depends(get_db)):
-    return complete_treatment(patient_id, db)
+    return complete_treatment(patient_id, doctor_user.user_id, db)

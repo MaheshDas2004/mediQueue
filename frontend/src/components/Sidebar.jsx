@@ -8,6 +8,7 @@ const menuByRole = {
     { label: 'Dashboard', to: '/admin', icon: LayoutDashboard, end: true },
     { label: 'Create User', to: '/admin/create-user', icon: UserPlus },
     { label: 'Manage Users', to: '/admin/manage-users', icon: Users },
+    { label: 'All Patients', to: '/admin/all-patients', icon: ListOrdered },
   ],
   TRIAGE: [
     { label: 'Dashboard', to: '/triage', icon: LayoutDashboard, end: true },
@@ -28,8 +29,9 @@ function Sidebar() {
   return (
     <aside className="w-72 border-r border-zinc-300/80 bg-white/90 p-4 backdrop-blur">
       <div className="mb-6 rounded-2xl bg-zinc-900 p-4 text-white shadow-sm">
-        <p className="text-xs uppercase tracking-wider text-zinc-300">Hospital Queue</p>
-        <h1 className="mt-1 text-xl font-semibold">mediQ</h1>
+        <span className="mt-1 text-xl font-semibold">MEDI</span>
+        <span className="mt-1 text-4xl font-semibold">Q</span>
+
       </div>
 
       <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Navigation</p>

@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import Button from '../../components/Button'
 import { callNextPatient, getDoctorQueue, markPatientDone } from '../../services/doctorService'
 
-const getPriorityConfig = (score) => {
-  if (score >= 6) return { label: 'Urgent', dot: 'bg-red-500', text: 'text-red-600' }
-  if (score >= 3) return { label: 'Moderate', dot: 'bg-amber-400', text: 'text-amber-600' }
-  return { label: 'Normal', dot: 'bg-emerald-400', text: 'text-emerald-600' }
-}
+const getPriorityConfig = () => ({ dot: 'bg-zinc-400', text: 'text-zinc-700' })
 
 const getStatusConfig = (status) => {
   if (status === 'IN_TREATMENT') return { label: 'In Treatment', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' }
@@ -79,26 +77,29 @@ function DoctorDashboardPage() {
     }
   }
 
+  const waitingQueue = useMemo(() => queue.filter((p) => p.status === 'WAITING'), [queue])
+
   const filteredQueue = useMemo(() => {
     const term = search.trim().toLowerCase()
-    if (!term) return queue
+    if (!term) return waitingQueue
 
-    return queue.filter(
+    return waitingQueue.filter(
       (p) =>
         (p.name || '').toLowerCase().includes(term) ||
         String(p.token_number || '').includes(term) ||
         (p.contact_number || '').toLowerCase().includes(term),
     )
-  }, [queue, search])
+  }, [waitingQueue, search])
 
   const stats = useMemo(() => {
     const waiting = queue.filter((p) => p.status === 'WAITING').length
     const inTreatment = queue.filter((p) => p.status === 'IN_TREATMENT').length
-    const urgent = queue.filter((p) => (p.priority_score || 0) >= 6).length
-    return { total: queue.length, waiting, inTreatment, urgent }
+    const highScore = queue.filter((p) => (p.priority_score || 0) >= 6).length
+    return { total: queue.length, waiting, inTreatment, highScore }
   }, [queue])
 
   const nowServing = queue.find((p) => p.status === 'IN_TREATMENT') || null
+  const hasActiveTreatment = Boolean(nowServing)
   const nextInQueue = queue.filter((p) => p.status === 'WAITING').slice(0, 4)
 
   return (
@@ -117,24 +118,17 @@ function DoctorDashboardPage() {
       ) : null}
 
       <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={() => fetchQueue(true)}
-          disabled={refreshing}
-          className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900 disabled:opacity-50"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M21 12a9 9 0 11-6.219-8.56" />
-          </svg>
-          {refreshing ? 'Syncing…' : 'Sync'}
-        </button>
+        <Button variant="secondary" onClick={() => fetchQueue(true)} isLoading={refreshing}>
+          <RefreshCw className="size-4" />
+          Refresh
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Total Patients" value={stats.total} />
         <StatCard label="Waiting" value={stats.waiting} />
         <StatCard label="In Treatment" value={stats.inTreatment} />
-        <StatCard label="Urgent" value={stats.urgent} sub="priority ≥ 6" />
+        <StatCard label="High Score" value={stats.highScore} sub="priority ≥ 6" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -186,7 +180,7 @@ function DoctorDashboardPage() {
                   return (
                     <span className={`mb-3 flex items-center gap-1.5 text-xs font-medium ${p.text}`}>
                       <span className={`h-2 w-2 rounded-full ${p.dot}`} />
-                      {p.label} · Score {nowServing.priority_score || 0}
+                      Priority Score {nowServing.priority_score || 0}
                     </span>
                   )
                 })()}
@@ -232,7 +226,7 @@ function DoctorDashboardPage() {
                       </div>
                       <span className={`flex items-center gap-1 text-[10px] font-semibold ${pb.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${pb.dot}`} />
-                        {pb.label}
+                        Score {p.priority_score || 0}
                       </span>
                     </div>
                   )
@@ -330,7 +324,7 @@ function DoctorDashboardPage() {
                         <td className="px-4 py-3">
                           <span className={`flex items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold ${pb.text}`}>
                             <span className={`h-2 w-2 shrink-0 rounded-full ${pb.dot}`} />
-                            {pb.label}
+                            Score {p.priority_score || 0}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -345,8 +339,8 @@ function DoctorDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleAction(p.patient_id, 'start')}
-                              disabled={Boolean(isLoading)}
-                              className="whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-zinc-700 disabled:opacity-40"
+                              disabled={Boolean(isLoading) || hasActiveTreatment}
+                              className="whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
                             >
                               {isLoading === 'start' ? 'Calling…' : 'Call In'}
                             </button>

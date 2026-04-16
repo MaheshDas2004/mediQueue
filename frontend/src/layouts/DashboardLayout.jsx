@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, LogOut } from 'lucide-react'
+import { CalendarDays, LogOut } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Button from '../components/Button'
@@ -34,9 +34,6 @@ function DashboardLayout() {
               <CalendarDays className="size-4" />
               {new Date().toLocaleDateString()}
             </div>
-            <button type="button" className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50">
-              <Bell className="size-4" />
-            </button>
             <Button variant="secondary" onClick={handleLogout}>
               <LogOut className="size-4" />
               Logout

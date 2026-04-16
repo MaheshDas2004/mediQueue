@@ -5,7 +5,7 @@ import Button from '../../components/Button'
 import Table from '../../components/Table'
 import Badge from '../../components/Badge'
 import { getQueue } from '../../services/triageService'
-import { getErrorMessage, isHighPriority } from '../../utils/helpers'
+import { getErrorMessage } from '../../utils/helpers'
 import { useToast } from '../../context/ToastContext'
 
 function QueueViewPage() {
@@ -32,15 +32,21 @@ function QueueViewPage() {
   const columns = [
     { key: 'token', title: 'Token #' },
     { key: 'name', title: 'Patient Name' },
+    { key: 'department_name', title: 'Department' },
     {
-      key: 'priority',
-      title: 'Priority',
-      render: (row) => <Badge variant={isHighPriority(row.priority) ? 'danger' : 'warning'}>{row.priority}</Badge>,
+      key: 'assigned_doctor_name',
+      title: 'Assigned To',
+      render: (row) => row.assigned_doctor_name ? `Dr. ${row.assigned_doctor_name}` : 'Not assigned',
     },
     {
       key: 'status',
       title: 'Status',
-      render: (row) => <Badge variant={isHighPriority(row.priority) ? 'danger' : 'info'}>{isHighPriority(row.priority) ? 'HIGH PRIORITY' : 'WAITING'}</Badge>,
+      render: (row) => <Badge variant="info">{row.status || 'WAITING'}</Badge>,
+    },
+    {
+      key: 'doctor_queue_avg_wait_time',
+      title: 'Doctor Avg Wait',
+      render: (row) => `${row.doctor_queue_avg_wait_time ?? 0} min`,
     },
     {
       key: 'estimated_wait_time',
@@ -50,7 +56,7 @@ function QueueViewPage() {
   ]
 
   return (
-    <Card title="Queue View" description="Live waiting queue with priority highlights">
+    <Card title="Queue View" description="Live waiting queue with doctor assignment and wait times">
       <div className="mb-4 flex justify-end">
         <Button variant="secondary" onClick={fetchQueue} isLoading={isLoading}>
           <RefreshCw className="size-4" />
