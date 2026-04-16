@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends,status
 from app.services.patient_service import register_patient, get_queue_with_wait_time
 from app.services.doctor_service import complete_treatment, get_doctor_queue, start_treatment
-from app.schemas.patient_schema import PatientSchema
+from app.schemas.patient_schema import ConsultationUpdateSchema, PatientSchema
 from app.database.connection import get_db
 from app.dependencies.auth import require_doctor
 
@@ -17,5 +17,10 @@ def start_treatment_endpoint(patient_id: int, doctor_user= Depends(require_docto
     return start_treatment(patient_id, doctor_user.user_id, db)
 
 @doctor_router.patch("/treatment/complete/{patient_id}")
-def complete_treatment_endpoint(patient_id: int, doctor_user= Depends(require_doctor), db=Depends(get_db)):
-    return complete_treatment(patient_id, doctor_user.user_id, db)
+def complete_treatment_endpoint(
+    patient_id: int,
+    consultation_data: ConsultationUpdateSchema | None = None,
+    doctor_user= Depends(require_doctor),
+    db=Depends(get_db),
+):
+    return complete_treatment(patient_id, doctor_user.user_id, db, consultation_data)

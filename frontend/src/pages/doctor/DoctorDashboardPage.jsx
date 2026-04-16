@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
-import { callNextPatient, getDoctorQueue, markPatientDone } from '../../services/doctorService'
+import { callNextPatient, getDoctorQueue } from '../../services/doctorService'
+import { useToast } from '../../context/ToastContext'
 
 const getPriorityConfig = () => ({ dot: 'bg-zinc-400', text: 'text-zinc-700' })
 
@@ -27,6 +29,8 @@ const StatCard = ({ label, value, sub }) => (
 )
 
 function DoctorDashboardPage() {
+  const navigate = useNavigate()
+  const { addToast } = useToast()
   const { user } = useAuth()
   const [queue, setQueue] = useState([])
   const [loading, setLoading] = useState(true)
@@ -61,13 +65,12 @@ function DoctorDashboardPage() {
     fetchQueue()
   }, [fetchQueue])
 
-  const handleAction = async (patientId, action) => {
-    setActionLoading((prev) => ({ ...prev, [patientId]: action }))
+  const handleCallIn = async (patientId) => {
+    setActionLoading((prev) => ({ ...prev, [patientId]: 'start' }))
     setApiError('')
 
     try {
-      if (action === 'start') await callNextPatient(patientId)
-      else await markPatientDone(patientId)
+      await callNextPatient(patientId)
       await fetchQueue(true)
     } catch (error) {
       const message = error?.response?.data?.detail || error?.response?.data?.message || 'Action failed'
@@ -75,6 +78,15 @@ function DoctorDashboardPage() {
     } finally {
       setActionLoading((prev) => ({ ...prev, [patientId]: '' }))
     }
+  }
+
+  const handleCompleteFromCurrentPatient = () => {
+    addToast({
+      title: 'Complete consultation from Current Patient',
+      description: 'Please enter diagnosis, medicines, or referral notes in the consultation panel before completing treatment.',
+      variant: 'info',
+    })
+    navigate('/doctor/current-patient')
   }
 
   const waitingQueue = useMemo(() => queue.filter((p) => p.status === 'WAITING'), [queue])
@@ -187,11 +199,10 @@ function DoctorDashboardPage() {
 
                 <button
                   type="button"
-                  onClick={() => handleAction(nowServing.patient_id, 'complete')}
-                  disabled={actionLoading[nowServing.patient_id] === 'complete'}
-                  className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+                  onClick={handleCompleteFromCurrentPatient}
+                  className="w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
                 >
-                  {actionLoading[nowServing.patient_id] === 'complete' ? 'Completing…' : 'Mark as Completed'}
+                  Consult
                 </button>
               </>
             ) : (
@@ -336,12 +347,12 @@ function DoctorDashboardPage() {
                         </td>
                         <td className="px-4 py-3">
                           {p.status === 'WAITING' ? (
-                            <button
-                              type="button"
-                              onClick={() => handleAction(p.patient_id, 'start')}
-                              disabled={Boolean(isLoading) || hasActiveTreatment}
-                              className="whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
-                            >
+                              <button
+                                type="button"
+                                onClick={() => handleCallIn(p.patient_id)}
+                                disabled={Boolean(isLoading) || hasActiveTreatment}
+                                className="whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
+                              >
                               {isLoading === 'start' ? 'Calling…' : 'Call In'}
                             </button>
                           ) : null}

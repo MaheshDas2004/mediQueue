@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Card from '../../components/Card'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
-import Modal from '../../components/Modal'
 import { useAuth } from '../../context/AuthContext'
 import { getDoctorQueue, markPatientDone } from '../../services/doctorService'
 import { getErrorMessage, isHighPriority } from '../../utils/helpers'
@@ -14,7 +13,11 @@ function CurrentPatientPage() {
   const [queue, setQueue] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [isMarking, setIsMarking] = useState(false)
-  const [openConfirm, setOpenConfirm] = useState(false)
+  const [consultation, setConsultation] = useState({
+    diagnosis: '',
+    prescribed_medicines: '',
+    referral_notes: '',
+  })
 
   const fetchQueue = useCallback(async () => {
     setIsLoading(true)
@@ -35,6 +38,18 @@ function CurrentPatientPage() {
   const currentPatient = useMemo(() => queue.find((item) => item.status === 'IN_TREATMENT') || null, [queue])
 
   const hasActiveTreatment = currentPatient?.status === 'IN_TREATMENT'
+
+  useEffect(() => {
+    if (!currentPatient) {
+      setConsultation({ diagnosis: '', prescribed_medicines: '', referral_notes: '' })
+      return
+    }
+    setConsultation({
+      diagnosis: currentPatient.diagnosis || '',
+      prescribed_medicines: currentPatient.prescribed_medicines || '',
+      referral_notes: currentPatient.referral_notes || '',
+    })
+  }, [currentPatient])
 
   const patientInfo = useMemo(() => {
     if (!currentPatient) return []
@@ -60,9 +75,8 @@ function CurrentPatientPage() {
     if (!currentPatient || !hasActiveTreatment) return
     setIsMarking(true)
     try {
-      await markPatientDone(currentPatient.patient_id)
+      await markPatientDone(currentPatient.patient_id, consultation)
       addToast({ title: 'Treatment completed', description: `${currentPatient.name} marked as done.` })
-      setOpenConfirm(false)
       await fetchQueue()
     } catch (error) {
       addToast({ title: 'Unable to complete', description: getErrorMessage(error), variant: 'error' })
@@ -134,26 +148,49 @@ function CurrentPatientPage() {
                   ))}
                 </ol>
               </div>
+
+              <div className="border-t border-slate-200 px-5 py-4">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Consultation Notes</span>
+                <div className="mt-3 grid gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Diagnosis</label>
+                    <textarea
+                      value={consultation.diagnosis}
+                      onChange={(event) => setConsultation((prev) => ({ ...prev, diagnosis: event.target.value }))}
+                      placeholder="Enter diagnosis..."
+                      className="min-h-[70px] w-full border border-slate-200 bg-white p-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Prescribed Medicines</label>
+                    <textarea
+                      value={consultation.prescribed_medicines}
+                      onChange={(event) => setConsultation((prev) => ({ ...prev, prescribed_medicines: event.target.value }))}
+                      placeholder="Medicine name, dosage, frequency, duration..."
+                      className="min-h-[90px] w-full border border-slate-200 bg-white p-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Referral Notes</label>
+                    <textarea
+                      value={consultation.referral_notes}
+                      onChange={(event) => setConsultation((prev) => ({ ...prev, referral_notes: event.target.value }))}
+                      placeholder="If referring, mention department/doctor and reason..."
+                      className="min-h-[70px] w-full border border-slate-200 bg-white p-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-400"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="danger" onClick={() => setOpenConfirm(true)} disabled={!currentPatient || !hasActiveTreatment}>
-                Mark as Done
+              <Button variant="danger" onClick={handleMarkDone} isLoading={isMarking} disabled={!currentPatient || !hasActiveTreatment}>
+                Complete Treatment & Save Notes
               </Button>
             </div>
           </div>
         )}
       </Card>
-
-      <Modal
-        open={openConfirm}
-        title="Complete treatment?"
-        description="This will mark the patient treatment as completed."
-        confirmText="Yes, Mark Done"
-        onClose={() => setOpenConfirm(false)}
-        onConfirm={handleMarkDone}
-        isLoading={isMarking}
-      />
     </>
   )
 }

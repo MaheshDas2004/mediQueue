@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.patient import PatientModel
+from app.schemas.patient_schema import ConsultationUpdateSchema
 from app.services.patient_service import refresh_waiting_priorities
 
 def get_doctor_queue(db:Session, doctor_id: int):
@@ -43,7 +44,12 @@ def start_treatment(patient_id: int, doctor_id: int, db: Session):
     db.refresh(patient)
     return patient
 
-def complete_treatment(patient_id: int, doctor_id: int, db: Session):
+def complete_treatment(
+    patient_id: int,
+    doctor_id: int,
+    db: Session,
+    consultation_data: ConsultationUpdateSchema | None = None,
+):
     patient = db.query(PatientModel).filter(PatientModel.patient_id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
@@ -51,6 +57,13 @@ def complete_treatment(patient_id: int, doctor_id: int, db: Session):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only complete your assigned patients")
     if patient.status != "IN_TREATMENT":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Patient is not in treatment")
+
+    if consultation_data is not None:
+        patient.diagnosis = consultation_data.diagnosis.strip() if consultation_data.diagnosis else None
+        patient.prescribed_medicines = (
+            consultation_data.prescribed_medicines.strip() if consultation_data.prescribed_medicines else None
+        )
+        patient.referral_notes = consultation_data.referral_notes.strip() if consultation_data.referral_notes else None
 
     patient.status = "COMPLETED"
     db.commit()

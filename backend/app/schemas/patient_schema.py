@@ -17,3 +17,9 @@ class PatientSchema(BaseModel):
     heart_rate: Optional[int] = Field(default=None, gt=0, lt=300)
     oxygen_lvl: Optional[int] = Field(default=None, ge=0, le=100)
     department_id: int = Field(..., gt=0)
+
+
+class ConsultationUpdateSchema(BaseModel):
+    diagnosis: Optional[str] = Field(default=None, max_length=2000)
+    prescribed_medicines: Optional[str] = Field(default=None, max_length=4000)
+    referral_notes: Optional[str] = Field(default=None, max_length=2000)

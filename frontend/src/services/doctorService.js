@@ -10,7 +10,8 @@ export const callNextPatient = async (patientId) => {
   return data
 }
 
-export const markPatientDone = async (patientId) => {
-  const { data } = await api.patch(`/doctors/treatment/complete/${patientId}`)
+export const markPatientDone = async (patientId, consultationData) => {
+  const payload = consultationData || {}
+  const { data } = await api.patch(`/doctors/treatment/complete/${patientId}`, payload)
   return data
 }

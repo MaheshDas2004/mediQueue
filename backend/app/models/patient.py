@@ -32,6 +32,10 @@ class PatientModel(Base):
 
     assigned_doctor_id = Column(Integer, nullable=True)
 
+    diagnosis = Column(String, nullable=True)
+    prescribed_medicines = Column(String, nullable=True)
+    referral_notes = Column(String, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     department = relationship("DepartmentModel")
